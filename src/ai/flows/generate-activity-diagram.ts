@@ -40,7 +40,7 @@ Requirements:
 - {{this.description}} (Priority: {{this.priority}}, Type: {{this.type}})
 {{/each}}
 
-You MUST use the "flowchart TD" syntax. Start with a 'start' node and end with an 'end' node. Use clear and concise labels for activities and decisions.
+You MUST use the "flowchart TD" syntax. Start with a 'start' node and end with an 'end' node. Use clear and concise labels for activities and decisions. Keep labels short and avoid special characters like '/', '(', or ')'.
 
 Example of Mermaid Activity Diagram syntax:
 flowchart TD
@@ -63,6 +63,14 @@ const generateActivityDiagramFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('Failed to generate diagram');
+    }
+    // Sanitize the output to remove characters that can break Mermaid syntax
+    const sanitizedDiagram = output.diagram
+      .replace(/[\(\)]/g, '') // Remove parentheses
+      .replace(/\//g, ' or '); // Replace slashes
+
+    return { diagram: sanitizedDiagram };
   }
 );
