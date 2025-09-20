@@ -10,15 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessage from '@/components/chat/chat-message';
 import RequirementsDisplay from '@/components/chat/requirements-display';
 import type { Message, Requirement } from '@/lib/types';
-import { extractRequirements } from '@/app/actions';
-
-const cannedResponses = [
-  'Got it. What else is required?',
-  'Thank you. Can you provide more details?',
-  'Understood. Please continue.',
-  'Interesting. Tell me more.',
-  'Okay, noting that down. What is the next requirement?',
-];
+import { extractRequirements, getAiChatResponse } from '@/app/actions';
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
@@ -31,6 +23,7 @@ export default function ChatInterface() {
   ]);
   const [input, setInput] = useState('');
   const [isExtracting, startExtracting] = useTransition();
+  const [isResponding, startResponding] = useTransition();
   const [extractedRequirements, setExtractedRequirements] = useState<Requirement[]>([]);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -46,7 +39,7 @@ export default function ChatInterface() {
     }
   }, [messages]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() === '') return;
 
@@ -57,18 +50,36 @@ export default function ChatInterface() {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInput('');
 
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: crypto.randomUUID(),
-        text: cannedResponses[Math.floor(Math.random() * cannedResponses.length)],
-        sender: 'ai',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiResponse]);
-    }, 500);
+    startResponding(async () => {
+      const result = await getAiChatResponse(newMessages);
+      if (result.error || !result.response) {
+        toast({
+          variant: 'destructive',
+          title: 'AI Response Error',
+          description: result.error || 'An unknown error occurred.',
+        });
+        // Optionally add a default error message to chat
+        const errorResponse: Message = {
+            id: crypto.randomUUID(),
+            text: "Sorry, I'm having trouble responding right now.",
+            sender: 'ai',
+            timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, errorResponse]);
+      } else {
+        const aiResponse: Message = {
+          id: crypto.randomUUID(),
+          text: result.response,
+          sender: 'ai',
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiResponse]);
+      }
+    });
   };
 
   const handleExtract = () => {
@@ -114,6 +125,12 @@ export default function ChatInterface() {
           {messages.map((message) => (
             <ChatMessage key={message.id} message={message} />
           ))}
+          {isResponding && (
+             <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>ReqBot is thinking...</span>
+            </div>
+          )}
           {isExtracting && (
              <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -139,17 +156,18 @@ export default function ChatInterface() {
                 handleSendMessage(e);
               }
             }}
+            disabled={isResponding}
           />
-          <Button type="submit" size="icon" disabled={!input.trim()}>
+          <Button type="submit" size="icon" disabled={!input.trim() || isResponding}>
             <Send className="h-4 w-4" />
           </Button>
         </form>
         <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={handleExtract} disabled={isExtracting || messages.length < 2}>
+          <Button variant="outline" onClick={handleExtract} disabled={isExtracting || messages.length < 2 || isResponding}>
             {isExtracting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileJson className="mr-2 h-4 w-4" />}
             Extract Requirements
           </Button>
-          <Button onClick={handleGenerateReport} disabled={extractedRequirements.length === 0}>
+          <Button onClick={handleGenerateReport} disabled={extractedRequirements.length === 0 || isResponding}>
             <FileText className="mr-2 h-4 w-4" />
             Generate Report
           </Button>

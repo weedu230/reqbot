@@ -1,7 +1,8 @@
 'use server';
 
 import { extractRequirementsAndGenerateJson } from '@/ai/flows/extract-requirements-and-generate-json';
-import { Requirement } from '@/lib/types';
+import { generateChatResponse } from '@/ai/flows/generate-chat-response';
+import { Requirement, Message } from '@/lib/types';
 
 type ActionResult = {
   requirements?: Requirement[];
@@ -22,4 +23,34 @@ export async function extractRequirements(
       error: error.message || 'Failed to extract requirements due to an unexpected error.',
     };
   }
+}
+
+type ChatActionResult = {
+    response?: string;
+    error?: string;
+};
+
+export async function getAiChatResponse(messages: Message[]): Promise<ChatActionResult> {
+    try {
+        const history = messages.slice(0, -1).map(m => ({
+            role: m.sender === 'user' ? 'user' as const : 'model' as const,
+            content: [{ text: m.text }],
+        }));
+
+        const latestMessage = messages[messages.length-1];
+        const historyWithLatest = [...history, {
+            role: 'user' as const,
+            content: [{ text: latestMessage.text }]
+        }];
+
+
+        const result = await generateChatResponse({ history: historyWithLatest });
+        return { response: result.response };
+
+    } catch (error: any) {
+        console.error('Error generating chat response:', error);
+        return {
+            error: error.message || 'Failed to get AI response due to an unexpected error.',
+        };
+    }
 }

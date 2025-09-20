@@ -45,7 +45,7 @@ const prompt = ai.definePrompt({
 
 {{{conversationHistory}}}
 
-Based on this conversation, extract the requirements and output them as a JSON array. Each requirement should have the following fields:
+Based on this conversation, extract the requirements and output them as a JSON object with a 'requirements' array. Each requirement should have the following fields:
 
 - id: A unique identifier for the requirement.
 - type: The type of requirement (Functional, NonFunctional, or Domain).
@@ -53,27 +53,7 @@ Based on this conversation, extract the requirements and output them as a JSON a
 - priority: The priority of the requirement (Low, Med, or High).
 - confidence_score: A score (0-1) indicating your confidence in the accuracy of the requirement.
 
-Ensure the output is a valid JSON array of requirements.
-
-Example output:
-[
-  {
-    "id": "REQ-001",
-    "type": "Functional",
-    "description": "The system should allow users to log in with their email and password.",
-    "priority": "High",
-    "confidence_score": 0.95
-  },
-  {
-    "id": "REQ-002",
-    "type": "NonFunctional",
-    "description": "The system should be responsive and load within 3 seconds.",
-    "priority": "Med",
-    "confidence_score": 0.8
-  }
-]
-
-OUTPUT:
+Ensure the output is a valid JSON object.
 `,
 });
 
