@@ -23,6 +23,7 @@ export default function ChatInterface() {
   ]);
   const [input, setInput] = useState('');
   const [isExtracting, startExtracting] = useTransition();
+  const [isGeneratingReport, startGeneratingReport] = useTransition();
   const [isResponding, startResponding] = useTransition();
   const [extractedRequirements, setExtractedRequirements] = useState<Requirement[]>([]);
   
@@ -92,6 +93,7 @@ export default function ChatInterface() {
     const conversationHistory = getConversationHistory(messages);
 
     startExtracting(async () => {
+      setExtractedRequirements([]); // Clear previous requirements
       const result = await extractRequirements(conversationHistory);
       if (result.error || !result.requirements) {
         toast({
@@ -110,18 +112,34 @@ export default function ChatInterface() {
   };
 
   const handleGenerateReport = () => {
-    try {
-      localStorage.setItem('requirements', JSON.stringify(extractedRequirements));
-      localStorage.setItem('conversationHistory', getConversationHistory(messages));
-      router.push('/report');
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to generate report',
-        description: 'Could not save requirements to local storage. It might be too large.',
-      });
-    }
+    const conversationHistory = getConversationHistory(messages);
+
+    startGeneratingReport(async () => {
+      const result = await extractRequirements(conversationHistory);
+      if (result.error || !result.requirements) {
+        toast({
+          variant: 'destructive',
+          title: 'Extraction Failed',
+          description: result.error || 'Could not generate report.',
+        });
+        return;
+      }
+      
+      try {
+        localStorage.setItem('requirements', JSON.stringify(result.requirements));
+        localStorage.setItem('conversationHistory', conversationHistory);
+        router.push('/report');
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to generate report',
+          description: 'Could not save requirements to local storage. It might be too large.',
+        });
+      }
+    });
   };
+
+  const isProcessing = isExtracting || isResponding || isGeneratingReport;
 
   return (
     <div className="w-full max-w-4xl h-full flex flex-col bg-card border rounded-lg shadow-lg animate-fade-in-up">
@@ -142,7 +160,13 @@ export default function ChatInterface() {
                 <span>Analyzing conversation and extracting requirements...</span>
             </div>
           )}
-          {extractedRequirements.length > 0 && (
+          {isGeneratingReport && (
+             <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Extracting requirements and building your report...</span>
+            </div>
+          )}
+          {extractedRequirements.length > 0 && !isGeneratingReport && (
             <RequirementsDisplay requirements={extractedRequirements} />
           )}
         </div>
@@ -161,19 +185,19 @@ export default function ChatInterface() {
                 handleSendMessage(e);
               }
             }}
-            disabled={isResponding}
+            disabled={isProcessing}
           />
-          <Button type="submit" size="icon" disabled={!input.trim() || isResponding}>
+          <Button type="submit" size="icon" disabled={!input.trim() || isProcessing}>
             <Send className="h-4 w-4" />
           </Button>
         </form>
         <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={handleExtract} disabled={isExtracting || messages.length < 2 || isResponding}>
+          <Button variant="outline" onClick={handleExtract} disabled={isProcessing || messages.length < 2}>
             {isExtracting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileJson className="mr-2 h-4 w-4" />}
             Extract Requirements
           </Button>
-          <Button onClick={handleGenerateReport} disabled={extractedRequirements.length === 0 || isResponding}>
-            <FileText className="mr-2 h-4 w-4" />
+          <Button onClick={handleGenerateReport} disabled={isProcessing || messages.length < 2}>
+            {isGeneratingReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
             Generate Report
           </Button>
         </div>
