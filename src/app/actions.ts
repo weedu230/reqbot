@@ -38,13 +38,8 @@ export async function getAiChatResponse(messages: Message[]): Promise<ChatAction
         }));
 
         const latestMessage = messages[messages.length-1];
-        const historyWithLatest = [...history, {
-            role: 'user' as const,
-            content: [{ text: latestMessage.text }]
-        }];
 
-
-        const result = await generateChatResponse({ history: historyWithLatest });
+        const result = await generateChatResponse({ history: history, message: latestMessage.text });
         return { response: result.response };
 
     } catch (error: any) {

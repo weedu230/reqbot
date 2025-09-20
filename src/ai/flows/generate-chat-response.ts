@@ -18,6 +18,7 @@ const GenerateChatResponseInputSchema = z.object({
       text: z.string(),
     })),
   })),
+  message: z.string().describe("The user's latest message."),
 });
 export type GenerateChatResponseInput = z.infer<typeof GenerateChatResponseInputSchema>;
 
@@ -40,12 +41,9 @@ const prompt = ai.definePrompt({
 
 Here is the conversation so far:
 {{#each history}}
-{{#if (eq role 'user')}}
-User: {{#each content}}{{text}}{{/each}}
-{{else}}
-AI: {{#each content}}{{text}}{{/each}}
-{{/if}}
+{{role}}: {{#each content}}{{text}}{{/each}}
 {{/each}}
+user: {{{message}}}
 
 Based on this conversation, provide a relevant and helpful response.
 `,
