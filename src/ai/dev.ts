@@ -7,3 +7,4 @@ import '@/ai/flows/generate-executive-summary.ts';
 import '@/ai/flows/generate-activity-diagram.ts';
 import '@/ai/flows/generate-cost-estimation.ts';
 import '@/ai/flows/generate-references.ts';
+import '@/ai/flows/generate-speech.ts';

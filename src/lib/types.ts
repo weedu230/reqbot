@@ -3,6 +3,7 @@ export type Message = {
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
+  audio?: string;
 };
 
 export type Requirement = {

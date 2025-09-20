@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Send, FileJson, FileText } from 'lucide-react';
+import { Loader2, Send, FileJson, FileText, Mic, StopCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,7 +10,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessage from '@/components/chat/chat-message';
 import RequirementsDisplay from '@/components/chat/requirements-display';
 import type { Message, Requirement } from '@/lib/types';
-import { extractRequirements, getAiChatResponse } from '@/app/actions';
+import { extractRequirements, getAiChatResponse, getAiSpeechResponse } from '@/app/actions';
+import { useRecord } from '@/hooks/use-record';
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
@@ -25,11 +26,23 @@ export default function ChatInterface() {
   const [isExtracting, startExtracting] = useTransition();
   const [isGeneratingReport, startGeneratingReport] = useTransition();
   const [isResponding, startResponding] = useTransition();
-  const [extractedRequirements, setExtractedRequirements] = useState<Requirement[]>([]);
-  
+  const [extractedRequirements, setExtractedRequirements] = useState<
+    Requirement[]
+  >([]);
+
+  const { isRecording, startRecording, stopRecording, transcript } =
+    useRecord();
+
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (transcript) {
+      setInput(transcript);
+    }
+  }, [transcript]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -44,9 +57,17 @@ export default function ChatInterface() {
     return msgs
       .map((msg) => `${msg.sender === 'user' ? 'User' : 'AI'}: ${msg.text}`)
       .join('\n');
-  }
+  };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const playAudio = (audioData: string) => {
+    const audio = new Audio(audioData);
+    audioRef.current = audio;
+    audio.play();
+  };
+
+  const handleSendMessage = async (
+    e: React.FormEvent | React.KeyboardEvent
+  ) => {
     e.preventDefault();
     if (input.trim() === '') return;
 
@@ -62,30 +83,44 @@ export default function ChatInterface() {
     setInput('');
 
     startResponding(async () => {
-      const result = await getAiChatResponse(newMessages);
-      if (result.error || !result.response) {
+      const chatResult = await getAiChatResponse(newMessages);
+      if (chatResult.error || !chatResult.response) {
         toast({
           variant: 'destructive',
           title: 'AI Response Error',
-          description: result.error || 'An unknown error occurred.',
+          description: chatResult.error || 'An unknown error occurred.',
         });
-        // Optionally add a default error message to chat
         const errorResponse: Message = {
-            id: crypto.randomUUID(),
-            text: "Sorry, I'm having trouble responding right now.",
-            sender: 'ai',
-            timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, errorResponse]);
-      } else {
-        const aiResponse: Message = {
           id: crypto.randomUUID(),
-          text: result.response,
+          text: "Sorry, I'm having trouble responding right now.",
           sender: 'ai',
           timestamp: new Date(),
         };
-        setMessages((prev) => [...prev, aiResponse]);
+        setMessages((prev) => [...prev, errorResponse]);
+        return;
       }
+
+      const aiResponse: Message = {
+        id: crypto.randomUUID(),
+        text: chatResult.response,
+        sender: 'ai',
+        timestamp: new Date(),
+      };
+
+      const speechResult = await getAiSpeechResponse(chatResult.response);
+      if (speechResult.audio) {
+        aiResponse.audio = speechResult.audio;
+        playAudio(speechResult.audio);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Speech Generation Error',
+          description:
+            speechResult.error || 'Could not generate audio response.',
+        });
+      }
+
+      setMessages((prev) => [...prev, aiResponse]);
     });
   };
 
@@ -105,7 +140,8 @@ export default function ChatInterface() {
         setExtractedRequirements(result.requirements);
         toast({
           title: 'Extraction Successful',
-          description: 'Requirements have been extracted from the conversation.',
+          description:
+            'Requirements have been extracted from the conversation.',
         });
       }
     });
@@ -124,46 +160,55 @@ export default function ChatInterface() {
         });
         return;
       }
-      
+
       try {
-        localStorage.setItem('requirements', JSON.stringify(result.requirements));
+        localStorage.setItem(
+          'requirements',
+          JSON.stringify(result.requirements)
+        );
         localStorage.setItem('conversationHistory', conversationHistory);
         router.push('/report');
       } catch (error) {
         toast({
           variant: 'destructive',
           title: 'Failed to generate report',
-          description: 'Could not save requirements to local storage. It might be too large.',
+          description:
+            'Could not save requirements to local storage. It might be too large.',
         });
       }
     });
   };
 
-  const isProcessing = isExtracting || isResponding || isGeneratingReport;
+  const isProcessing =
+    isExtracting || isResponding || isGeneratingReport || isRecording;
 
   return (
     <div className="w-full max-w-4xl h-full flex flex-col bg-card border rounded-lg shadow-lg animate-fade-in-up">
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <div className="space-y-4">
           {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
+            <ChatMessage
+              key={message.id}
+              message={message}
+              onPlayAudio={playAudio}
+            />
           ))}
           {isResponding && (
-             <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>ReqBot is thinking...</span>
+            <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>ReqBot is thinking...</span>
             </div>
           )}
           {isExtracting && (
-             <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Analyzing conversation and extracting requirements...</span>
+            <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Analyzing conversation and extracting requirements...</span>
             </div>
           )}
           {isGeneratingReport && (
-             <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Extracting requirements and building your report...</span>
+            <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Extracting requirements and building your report...</span>
             </div>
           )}
           {extractedRequirements.length > 0 && !isGeneratingReport && (
@@ -177,7 +222,9 @@ export default function ChatInterface() {
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Describe a requirement..."
+            placeholder={
+              isRecording ? 'Listening...' : 'Describe a requirement...'
+            }
             className="flex-1 resize-none"
             rows={1}
             onKeyDown={(e) => {
@@ -187,17 +234,56 @@ export default function ChatInterface() {
             }}
             disabled={isProcessing}
           />
-          <Button type="submit" size="icon" disabled={!input.trim() || isProcessing}>
+          {isRecording ? (
+            <Button
+              type="button"
+              size="icon"
+              variant="destructive"
+              onClick={stopRecording}
+            >
+              <StopCircle className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="icon"
+              onClick={startRecording}
+              disabled={isProcessing}
+            >
+              <Mic className="h-4 w-4" />
+            </Button>
+          )}
+
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!input.trim() || isProcessing}
+          >
             <Send className="h-4 w-4" />
           </Button>
         </form>
         <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={handleExtract} disabled={isProcessing || messages.length < 2}>
-            {isExtracting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileJson className="mr-2 h-4 w-4" />}
+          <Button
+            variant="outline"
+            onClick={handleExtract}
+            disabled={isProcessing || messages.length < 2}
+          >
+            {isExtracting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <FileJson className="mr-2 h-4 w-4" />
+            )}
             Extract Requirements
           </Button>
-          <Button onClick={handleGenerateReport} disabled={isProcessing || messages.length < 2}>
-            {isGeneratingReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+          <Button
+            onClick={handleGenerateReport}
+            disabled={isProcessing || messages.length < 2}
+          >
+            {isGeneratingReport ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <FileText className="mr-2 h-4 w-4" />
+            )}
             Generate Report
           </Button>
         </div>

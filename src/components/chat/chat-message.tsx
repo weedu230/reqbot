@@ -1,15 +1,17 @@
-import { Bot, User } from 'lucide-react';
+import { Bot, User, Volume2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '../ui/button';
 
 interface ChatMessageProps {
   message: Message;
+  onPlayAudio?: (audio: string) => void;
 }
 
-export default function ChatMessage({ message }: ChatMessageProps) {
+export default function ChatMessage({ message, onPlayAudio }: ChatMessageProps) {
   const isUser = message.sender === 'user';
 
   return (
@@ -32,16 +34,29 @@ export default function ChatMessage({ message }: ChatMessageProps) {
           isUser ? 'items-end' : 'items-start'
         )}
       >
-        <div
-          className={cn(
-            'max-w-xs md:max-w-md lg:max-w-lg rounded-lg px-4 py-2 text-sm shadow-sm animate-fade-in-up',
-            isUser
-              ? 'bg-primary text-primary-foreground rounded-br-none'
-              : 'bg-muted rounded-bl-none'
+        <div className="flex items-center gap-2">
+          {isUser && message.audio && onPlayAudio && (
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onPlayAudio(message.audio!)}>
+              <Volume2 className="h-4 w-4 text-muted-foreground" />
+            </Button>
           )}
-        >
-          <p className="whitespace-pre-wrap">{message.text}</p>
+          <div
+            className={cn(
+              'max-w-xs md:max-w-md lg:max-w-lg rounded-lg px-4 py-2 text-sm shadow-sm animate-fade-in-up',
+              isUser
+                ? 'bg-primary text-primary-foreground rounded-br-none'
+                : 'bg-muted rounded-bl-none'
+            )}
+          >
+            <p className="whitespace-pre-wrap">{message.text}</p>
+          </div>
+          {!isUser && message.audio && onPlayAudio && (
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onPlayAudio(message.audio!)}>
+              <Volume2 className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          )}
         </div>
+
         <span className="text-xs text-muted-foreground">
           {formatDistanceToNow(message.timestamp, { addSuffix: true })}
         </span>

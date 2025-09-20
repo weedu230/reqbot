@@ -6,6 +6,7 @@ import { generateExecutiveSummary } from '@/ai/flows/generate-executive-summary'
 import { generateActivityDiagram } from '@/ai/flows/generate-activity-diagram';
 import { generateCostEstimation } from '@/ai/flows/generate-cost-estimation';
 import { generateReferences } from '@/ai/flows/generate-references';
+import { generateSpeech } from '@/ai/flows/generate-speech';
 import { Requirement, Message } from '@/lib/types';
 
 type ActionResult = {
@@ -103,6 +104,23 @@ export async function getReferences(conversationHistory: string): Promise<Report
         console.error('Error generating references:', error);
         return {
             error: error.message || 'Failed to generate references.',
+        };
+    }
+}
+
+type SpeechActionResult = {
+    audio?: string;
+    error?: string;
+}
+
+export async function getAiSpeechResponse(text: string): Promise<SpeechActionResult> {
+    try {
+        const result = await generateSpeech(text);
+        return { audio: result.media };
+    } catch (error: any) {
+        console.error('Error generating speech:', error);
+        return {
+            error: error.message || 'Failed to generate speech.',
         };
     }
 }
