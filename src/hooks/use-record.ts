@@ -6,6 +6,7 @@ export const useRecord = () => {
     const [isRecording, setIsRecording] = useState(false);
     const [transcript, setTranscript] = useState('');
     const recognitionRef = useRef<SpeechRecognition | null>(null);
+    const finalTranscriptRef = useRef<string>('');
 
     useEffect(() => {
         if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
@@ -15,16 +16,15 @@ export const useRecord = () => {
             recognition.lang = 'en-US';
 
             recognition.onresult = (event) => {
-                let finalTranscript = '';
                 let interimTranscript = '';
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
+                        finalTranscriptRef.current += event.results[i][0].transcript;
                     } else {
                         interimTranscript += event.results[i][0].transcript;
                     }
                 }
-                setTranscript(finalTranscript + interimTranscript);
+                setTranscript(finalTranscriptRef.current + interimTranscript);
             };
             
             recognitionRef.current = recognition;
@@ -40,6 +40,7 @@ export const useRecord = () => {
     const startRecording = () => {
         if (recognitionRef.current) {
             setTranscript('');
+            finalTranscriptRef.current = '';
             recognitionRef.current.start();
             setIsRecording(true);
         } else {
