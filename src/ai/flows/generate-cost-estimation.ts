@@ -35,22 +35,18 @@ const prompt = ai.definePrompt({
   output: { schema: GenerateCostEstimationOutputSchema },
   prompt: `You are an expert project manager. Based on the following requirements, provide a high-level, speculative cost estimation for the project.
 
+For each requirement, provide a rough estimation for cost, labour, and time. Present this in an HTML table with the following columns: "Requirement", "Estimated Cost (USD)", "Estimated Labour (Person-Hours)", and "Estimated Time (Days)".
+
 Requirements:
 {{#each requirements}}
 - {{this.description}} (Priority: {{this.priority}}, Type: {{this.type}})
 {{/each}}
 
-Break down the estimation into the following categories:
-- **Development Team:** (e.g., Frontend, Backend, AI/ML Specialist)
-- **Infrastructure:** (e.g., Hosting, Database, APIs)
-- **Third-Party Services:** (e.g., Payment gateways, Analytics tools)
-- **Contingency:** (A buffer for unforeseen costs)
-
-For each category, provide a brief explanation and a rough cost range (e.g., in developer-hours or a monetary range like '$X,000 - $Y,000').
+After the table, provide a summary and a breakdown of other potential costs (e.g., Infrastructure, Third-Party Services, Contingency).
 
 **Disclaimer:** This is a preliminary, non-binding estimate for discussion purposes only. Actual costs will vary based on team composition, technology choices, and project scope.
 
-Output the entire response as a single HTML string. Use headings (<h3>), paragraphs (<p>), lists (<ul>, <li>), and bold tags (<strong>) for formatting.
+Output the entire response as a single HTML string. Use a <table> with <thead>, <tbody>, <tr>, <th>, and <td> tags for the main estimation. Use headings (<h3>), paragraphs (<p>), and lists (<ul>, <li>) for the summary and disclaimer.
 `,
 });
 
