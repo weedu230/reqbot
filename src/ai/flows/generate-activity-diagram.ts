@@ -18,7 +18,7 @@ const GenerateActivityDiagramInputSchema = z.object({
 export type GenerateActivityDiagramInput = z.infer<typeof GenerateActivityDiagramInputSchema>;
 
 const GenerateActivityDiagramOutputSchema = z.object({
-  diagram: z.string().describe("The activity diagram in Mermaid syntax."),
+  diagram: z.string().describe("The activity diagram in Mermaid syntax, excluding the 'flowchart TD' declaration."),
 });
 export type GenerateActivityDiagramOutput = z.infer<typeof GenerateActivityDiagramOutputSchema>;
 
@@ -33,25 +33,28 @@ const prompt = ai.definePrompt({
   name: 'generateActivityDiagramPrompt',
   input: { schema: GenerateActivityDiagramInputSchema },
   output: { schema: GenerateActivityDiagramOutputSchema },
-  prompt: `You are an expert system designer. Based on the following requirements, generate an Activity Diagram in Mermaid.js syntax. The diagram must illustrate the primary user flow or process.
+  prompt: `You are an expert system designer. Based on the following requirements, generate the body of an Activity Diagram in Mermaid.js 'flowchart TD' syntax.
 
 Requirements:
 {{#each requirements}}
 - {{this.description}} (Priority: {{this.priority}}, Type: {{this.type}})
 {{/each}}
 
-You MUST use the "flowchart TD" syntax. Start with a 'start' node and end with an 'end' node. Use clear and concise labels for activities and decisions. Keep labels short and avoid special characters like '/', '(', or ')'.
+You MUST ONLY generate the sequence of nodes and edges.
+- Start with a 'start' node like this: A["Start"]
+- End with an 'end' node like this: Z["End"]
+- Use clear, concise labels for activities and decisions. Keep labels short and avoid special characters like '/', '(', or ')'.
+- Each node must have a unique ID (e.g., A, B, C).
 
-Example of Mermaid Activity Diagram syntax:
-flowchart TD
-    A[Start] --> B(User authenticates);
-    B --> C{Is authentication successful?};
-    C -->|Yes| D[User views dashboard];
-    C -->|No| E[Show error message];
-    D --> F[End];
-    E --> A;
+Example of the required output format:
+A[Start] --> B(User authenticates);
+B --> C{Is authentication successful?};
+C -->|Yes| D[User views dashboard];
+C -->|No| E[Show error message];
+D --> F[End];
+E --> A;
 
-Generate only the Mermaid syntax for the diagram. Do not include the \`\`\`mermaid opening and closing tags.
+DO NOT include the 'flowchart TD' line or the code block fences (\`\`\`mermaid). Only provide the node and edge definitions.
 `,
 });
 
@@ -66,11 +69,11 @@ const generateActivityDiagramFlow = ai.defineFlow(
     if (!output) {
       throw new Error('Failed to generate diagram');
     }
-    // Sanitize the output to remove characters that can break Mermaid syntax
+    // Sanitize the output and wrap it in the required flowchart syntax
     const sanitizedDiagram = output.diagram
       .replace(/[\(\)]/g, '') // Remove parentheses
       .replace(/\//g, ' or '); // Replace slashes
 
-    return { diagram: sanitizedDiagram };
+    return { diagram: `flowchart TD\n${sanitizedDiagram}` };
   }
 );

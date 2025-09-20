@@ -75,59 +75,57 @@ const RequirementSection = ({
   </Card>
 );
 
-const GeneratedSection = ({
-  title,
-  fetcher,
-  payload,
-  isDiagram = false,
+const GeneratedSectionContent = ({
+  content,
+  isLoading,
+  error,
+  isDiagram = false
 }: {
-  title: string;
-  fetcher: (payload: any) => Promise<{ content?: string; error?: string }>;
-  payload: any;
+  content: string;
+  isLoading: boolean;
+  error: string;
   isDiagram?: boolean;
 }) => {
-  const [content, setContent] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>Generating...</span>
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    async function fetchData() {
-      setIsLoading(true);
-      const result = await fetcher(payload);
-      if (result.content) {
-        setContent(result.content);
-      } else {
-        setError(result.error || 'Failed to load content.');
-      }
-      setIsLoading(false);
-    }
-    fetchData();
-  }, [fetcher, payload]);
+  if (error) {
+    return <p className="text-destructive text-sm">{error}</p>;
+  }
+
+  if (isDiagram) {
+    return <Mermaid chart={content} />;
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Generating...</span>
-          </div>
-        )}
-        {error && <p className="text-destructive text-sm">{error}</p>}
-        {!isLoading && !error && (
-            isDiagram ? (
-                <Mermaid chart={content} />
-            ) : (
-                <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: content }} />
-            )
-        )}
-      </CardContent>
-    </Card>
+    <div
+      className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+      dangerouslySetInnerHTML={{ __html: content }}
+    />
   );
 };
+
+
+type ReportData = {
+  summary: string;
+  diagram: string;
+  estimation: string;
+  references: string;
+};
+
+type ReportErrors = {
+  summary?: string;
+  diagram?: string;
+  estimation?: string;
+  references?: string;
+};
+
 
 export default function ReportPage() {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
@@ -135,30 +133,64 @@ export default function ReportPage() {
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
 
+  const [reportData, setReportData] = useState<Partial<ReportData>>({});
+  const [reportErrors, setReportErrors] = useState<ReportErrors>({});
+  const [isGenerating, setIsGenerating] = useState(true);
+
   useEffect(() => {
     setIsClient(true);
+    let storedRequirements: Requirement[] = [];
+    let storedHistory = '';
+
     try {
-      const storedRequirements = localStorage.getItem('requirements');
-      const storedHistory = localStorage.getItem('conversationHistory');
-      if (storedRequirements) {
-        setRequirements(JSON.parse(storedRequirements));
-      } else {
-        // Only redirect if there are truly no requirements to show
-        if (!localStorage.getItem('requirements')) {
-          router.push('/');
-        }
+      const reqs = localStorage.getItem('requirements');
+      const hist = localStorage.getItem('conversationHistory');
+
+      if (reqs) {
+        storedRequirements = JSON.parse(reqs);
+        setRequirements(storedRequirements);
       }
-      if (storedHistory) {
+      if (hist) {
+        storedHistory = hist;
         setConversationHistory(storedHistory);
       }
+
+      if (!reqs) {
+        router.push('/');
+      } else {
+        // Fetch all generated data in parallel
+        const fetchAllData = async () => {
+          setIsGenerating(true);
+          const [summaryResult, diagramResult, estimationResult, referencesResult] = await Promise.all([
+            getExecutiveSummary(storedRequirements),
+            getActivityDiagram(storedRequirements),
+            getCostEstimation(storedRequirements),
+            getReferences(storedHistory),
+          ]);
+
+          setReportData({
+            summary: summaryResult.content,
+            diagram: diagramResult.content,
+            estimation: estimationResult.content,
+            references: referencesResult.content,
+          });
+
+          setReportErrors({
+            summary: summaryResult.error,
+            diagram: diagramResult.error,
+            estimation: estimationResult.error,
+            references: referencesResult.error,
+          });
+
+          setIsGenerating(false);
+        };
+        fetchAllData();
+      }
     } catch (error) {
-      console.error('Failed to load from local storage', error);
+      console.error('Failed to load from local storage or generate report', error);
       router.push('/');
     }
   }, [router]);
-
-  const memoizedRequirements = useMemo(() => requirements, [requirements]);
-  const memoizedHistory = useMemo(() => conversationHistory, [conversationHistory]);
 
 
   if (!isClient) {
@@ -167,18 +199,6 @@ export default function ReportPage() {
         <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-muted-foreground">Loading report...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // This prevents a flash of "No requirements" before they are loaded from localStorage
-  if (requirements.length === 0 && conversationHistory === '') {
-     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Loading requirements...</p>
         </div>
       </div>
     );
@@ -212,7 +232,12 @@ export default function ReportPage() {
           
           <Separator />
           
-          <GeneratedSection title="Executive Summary" fetcher={getExecutiveSummary} payload={memoizedRequirements} />
+           <Card>
+            <CardHeader><CardTitle>Executive Summary</CardTitle></CardHeader>
+            <CardContent>
+              <GeneratedSectionContent content={reportData.summary || ''} isLoading={isGenerating} error={reportErrors.summary || ''} />
+            </CardContent>
+          </Card>
 
           <div className="space-y-6">
             <RequirementSection title="Functional Requirements" requirements={functional} />
@@ -221,11 +246,26 @@ export default function ReportPage() {
           </div>
 
           <div className="space-y-6">
-            <GeneratedSection title="Activity Diagram" fetcher={getActivityDiagram} payload={memoizedRequirements} isDiagram={true} />
-            <GeneratedSection title="Cost Estimation" fetcher={getCostEstimation} payload={memoizedRequirements} />
+             <Card>
+              <CardHeader><CardTitle>Activity Diagram</CardTitle></CardHeader>
+              <CardContent>
+                <GeneratedSectionContent content={reportData.diagram || ''} isLoading={isGenerating} error={reportErrors.diagram || ''} isDiagram={true} />
+              </CardContent>
+            </Card>
+             <Card>
+              <CardHeader><CardTitle>Cost Estimation</CardTitle></CardHeader>
+              <CardContent>
+                <GeneratedSectionContent content={reportData.estimation || ''} isLoading={isGenerating} error={reportErrors.estimation || ''} />
+              </CardContent>
+            </Card>
           </div>
 
-          <GeneratedSection title="References" fetcher={getReferences} payload={memoizedHistory} />
+          <Card>
+            <CardHeader><CardTitle>References</CardTitle></CardHeader>
+            <CardContent>
+              <GeneratedSectionContent content={reportData.references || ''} isLoading={isGenerating} error={reportErrors.references || ''} />
+            </CardContent>
+          </Card>
 
         </div>
       </main>
