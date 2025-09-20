@@ -33,14 +33,14 @@ const prompt = ai.definePrompt({
   name: 'generateActivityDiagramPrompt',
   input: { schema: GenerateActivityDiagramInputSchema },
   output: { schema: GenerateActivityDiagramOutputSchema },
-  prompt: `You are an expert system designer. Based on the following requirements, generate an Activity Diagram in Mermaid.js syntax. The diagram should illustrate the primary user flow or process described in the functional requirements.
+  prompt: `You are an expert system designer. Based on the following requirements, generate an Activity Diagram in Mermaid.js syntax. The diagram must illustrate the primary user flow or process.
 
 Requirements:
 {{#each requirements}}
 - {{this.description}} (Priority: {{this.priority}}, Type: {{this.type}})
 {{/each}}
 
-Focus on the main user journey. Start with a 'start' node and end with an 'end' node. Use clear and concise labels for activities and decisions.
+You MUST use the "flowchart TD" syntax. Start with a 'start' node and end with an 'end' node. Use clear and concise labels for activities and decisions.
 
 Example of Mermaid Activity Diagram syntax:
 flowchart TD
