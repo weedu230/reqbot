@@ -56,7 +56,6 @@ Based on this conversation, extract the requirements and output them as a JSON a
 Ensure the output is a valid JSON array of requirements.
 
 Example output:
-```json
 [
   {
     "id": "REQ-001",
@@ -73,7 +72,6 @@ Example output:
     "confidence_score": 0.8
   }
 ]
-```
 
 OUTPUT:
 `,
