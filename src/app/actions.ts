@@ -2,6 +2,10 @@
 
 import { extractRequirementsAndGenerateJson } from '@/ai/flows/extract-requirements-and-generate-json';
 import { generateChatResponse } from '@/ai/flows/generate-chat-response';
+import { generateExecutiveSummary } from '@/ai/flows/generate-executive-summary';
+import { generateActivityDiagram } from '@/ai/flows/generate-activity-diagram';
+import { generateCostEstimation } from '@/ai/flows/generate-cost-estimation';
+import { generateReferences } from '@/ai/flows/generate-references';
 import { Requirement, Message } from '@/lib/types';
 
 type ActionResult = {
@@ -46,6 +50,59 @@ export async function getAiChatResponse(messages: Message[]): Promise<ChatAction
         console.error('Error generating chat response:', error);
         return {
             error: error.message || 'Failed to get AI response due to an unexpected error.',
+        };
+    }
+}
+
+type ReportSectionResult = {
+  content?: string;
+  error?: string;
+};
+
+export async function getExecutiveSummary(requirements: Requirement[]): Promise<ReportSectionResult> {
+  try {
+    const result = await generateExecutiveSummary({ requirements });
+    return { content: result.summary };
+  } catch (error: any) {
+    console.error('Error generating executive summary:', error);
+    return {
+      error: error.message || 'Failed to generate executive summary.',
+    };
+  }
+}
+
+export async function getActivityDiagram(requirements: Requirement[]): Promise<ReportSectionResult> {
+    try {
+        const result = await generateActivityDiagram({ requirements });
+        return { content: result.diagram };
+    } catch (error: any) {
+        console.error('Error generating activity diagram:', error);
+        return {
+            error: error.message || 'Failed to generate activity diagram.',
+        };
+    }
+}
+
+export async function getCostEstimation(requirements: Requirement[]): Promise<ReportSectionResult> {
+    try {
+        const result = await generateCostEstimation({ requirements });
+        return { content: result.estimation };
+    } catch (error: any) {
+        console.error('Error generating cost estimation:', error);
+        return {
+            error: error.message || 'Failed to generate cost estimation.',
+        };
+    }
+}
+
+export async function getReferences(conversationHistory: string): Promise<ReportSectionResult> {
+    try {
+        const result = await generateReferences({ conversationHistory });
+        return { content: result.references };
+    } catch (error: any) {
+        console.error('Error generating references:', error);
+        return {
+            error: error.message || 'Failed to generate references.',
         };
     }
 }

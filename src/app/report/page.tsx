@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Requirement } from '@/lib/types';
@@ -16,7 +16,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Printer, ArrowLeft } from 'lucide-react';
+import { Printer, ArrowLeft, Loader2 } from 'lucide-react';
+import {
+  getExecutiveSummary,
+  getActivityDiagram,
+  getCostEstimation,
+  getReferences,
+} from '@/app/actions';
+import Mermaid from '@/components/report/mermaid';
 
 const RequirementSection = ({
   title,
@@ -68,19 +75,63 @@ const RequirementSection = ({
   </Card>
 );
 
-const PlaceholderSection = ({ title }: { title: string }) => (
+const GeneratedSection = ({
+  title,
+  fetcher,
+  payload,
+  isDiagram = false,
+}: {
+  title: string;
+  fetcher: (payload: any) => Promise<{ content?: string; error?: string }>;
+  payload: any;
+  isDiagram?: boolean;
+}) => {
+  const [content, setContent] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      const result = await fetcher(payload);
+      if (result.content) {
+        setContent(result.content);
+      } else {
+        setError(result.error || 'Failed to load content.');
+      }
+      setIsLoading(false);
+    }
+    fetchData();
+  }, [fetcher, payload]);
+
+  return (
     <Card>
-        <CardHeader>
-            <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-            <p className="text-muted-foreground text-sm">[Placeholder for {title}. This content will be auto-generated in a future version.]</p>
-        </CardContent>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading && (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Generating...</span>
+          </div>
+        )}
+        {error && <p className="text-destructive text-sm">{error}</p>}
+        {!isLoading && !error && (
+            isDiagram ? (
+                <Mermaid chart={content} />
+            ) : (
+                <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: content }} />
+            )
+        )}
+      </CardContent>
     </Card>
-);
+  );
+};
 
 export default function ReportPage() {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const [conversationHistory, setConversationHistory] = useState('');
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
 
@@ -88,17 +139,24 @@ export default function ReportPage() {
     setIsClient(true);
     try {
       const storedRequirements = localStorage.getItem('requirements');
+      const storedHistory = localStorage.getItem('conversationHistory');
       if (storedRequirements) {
         setRequirements(JSON.parse(storedRequirements));
       } else {
-        // If no requirements, redirect back
         router.push('/');
       }
+      if (storedHistory) {
+        setConversationHistory(storedHistory);
+      }
     } catch (error) {
-      console.error('Failed to load requirements from local storage', error);
+      console.error('Failed to load from local storage', error);
       router.push('/');
     }
   }, [router]);
+
+  const memoizedRequirements = useMemo(() => requirements, [requirements]);
+  const memoizedHistory = useMemo(() => conversationHistory, [conversationHistory]);
+
 
   if (!isClient || requirements.length === 0) {
     return (
@@ -136,10 +194,7 @@ export default function ReportPage() {
           
           <Separator />
           
-          <Card>
-            <CardHeader><CardTitle>Executive Summary</CardTitle></CardHeader>
-            <CardContent><p className="text-muted-foreground">[Placeholder for auto-generated executive summary.]</p></CardContent>
-          </Card>
+          <GeneratedSection title="Executive Summary" fetcher={getExecutiveSummary} payload={memoizedRequirements} />
 
           <div className="space-y-6">
             <RequirementSection title="Functional Requirements" requirements={functional} />
@@ -148,14 +203,12 @@ export default function ReportPage() {
           </div>
 
           <div className="space-y-6">
-            <PlaceholderSection title="Activity Diagram" />
-            <PlaceholderSection title="Cost Estimation" />
+            <GeneratedSection title="Activity Diagram" fetcher={getActivityDiagram} payload={memoizedRequirements} isDiagram={true} />
+            <GeneratedSection title="Cost Estimation" fetcher={getCostEstimation} payload={memoizedRequirements} />
           </div>
 
-          <Card>
-            <CardHeader><CardTitle>References</CardTitle></CardHeader>
-            <CardContent><p className="text-muted-foreground">[Placeholder for references section.]</p></CardContent>
-          </Card>
+          <GeneratedSection title="References" fetcher={getReferences} payload={memoizedHistory} />
+
         </div>
       </main>
     </div>

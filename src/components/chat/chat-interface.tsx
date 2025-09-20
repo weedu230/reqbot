@@ -39,6 +39,12 @@ export default function ChatInterface() {
     }
   }, [messages]);
 
+  const getConversationHistory = (msgs: Message[]) => {
+    return msgs
+      .map((msg) => `${msg.sender === 'user' ? 'User' : 'AI'}: ${msg.text}`)
+      .join('\n');
+  }
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() === '') return;
@@ -83,9 +89,7 @@ export default function ChatInterface() {
   };
 
   const handleExtract = () => {
-    const conversationHistory = messages
-      .map((msg) => `${msg.sender === 'user' ? 'User' : 'AI'}: ${msg.text}`)
-      .join('\n');
+    const conversationHistory = getConversationHistory(messages);
 
     startExtracting(async () => {
       const result = await extractRequirements(conversationHistory);
@@ -108,6 +112,7 @@ export default function ChatInterface() {
   const handleGenerateReport = () => {
     try {
       localStorage.setItem('requirements', JSON.stringify(extractedRequirements));
+      localStorage.setItem('conversationHistory', getConversationHistory(messages));
       router.push('/report');
     } catch (error) {
       toast({
