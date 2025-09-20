@@ -143,7 +143,10 @@ export default function ReportPage() {
       if (storedRequirements) {
         setRequirements(JSON.parse(storedRequirements));
       } else {
-        router.push('/');
+        // Only redirect if there are truly no requirements to show
+        if (!localStorage.getItem('requirements')) {
+          router.push('/');
+        }
       }
       if (storedHistory) {
         setConversationHistory(storedHistory);
@@ -158,10 +161,25 @@ export default function ReportPage() {
   const memoizedHistory = useMemo(() => conversationHistory, [conversationHistory]);
 
 
-  if (!isClient || requirements.length === 0) {
+  if (!isClient) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p>Loading report...</p>
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading report...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // This prevents a flash of "No requirements" before they are loaded from localStorage
+  if (requirements.length === 0 && conversationHistory === '') {
+     return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading requirements...</p>
+        </div>
       </div>
     );
   }
@@ -172,7 +190,7 @@ export default function ReportPage() {
 
   return (
     <div className="bg-background min-h-screen">
-      <Header />
+      <Header className="no-print"/>
       <div className="fixed top-20 right-4 z-10 flex gap-2 no-print">
           <Button variant="outline" size="icon" onClick={() => router.push('/')}>
             <ArrowLeft className="h-4 w-4" />
@@ -183,7 +201,7 @@ export default function ReportPage() {
             Print / Save as PDF
           </Button>
       </div>
-      <main className="max-w-5xl mx-auto p-4 md:p-8 lg:p-12 print:p-0">
+      <main className="max-w-5xl mx-auto p-4 md:p-8 lg:p-12 print-container">
         <div className="space-y-8">
           <header className="space-y-2">
             <h1 className="text-4xl font-bold">Requirements Report</h1>

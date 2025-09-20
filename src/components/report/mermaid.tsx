@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import mermaid from 'mermaid';
+import { useTheme } from 'next-themes';
 
 type MermaidProps = {
   chart: string;
@@ -12,16 +13,27 @@ const randomId = () => `mermaid-diagram-${Math.random().toString(36).substring(2
 
 const Mermaid = ({ chart }: MermaidProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const diagramId = randomId();
+  const [diagramId] = useState(randomId());
+  const { theme, resolvedTheme } = useTheme();
 
   useEffect(() => {
-    mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+    const currentTheme = resolvedTheme === 'dark' ? 'dark' : 'neutral';
+    
+    mermaid.initialize({ 
+      startOnLoad: false, 
+      theme: currentTheme,
+      flowchart: {
+        useMaxWidth: true,
+      }
+    });
 
     const renderMermaid = async () => {
       if (containerRef.current && chart) {
         try {
           const { svg } = await mermaid.render(diagramId, chart);
-          containerRef.current.innerHTML = svg;
+          if (containerRef.current) {
+             containerRef.current.innerHTML = svg;
+          }
         } catch (error) {
           console.error('Mermaid rendering error:', error);
           if (containerRef.current) {
@@ -33,7 +45,7 @@ const Mermaid = ({ chart }: MermaidProps) => {
     
     renderMermaid();
 
-  }, [chart, diagramId]);
+  }, [chart, diagramId, resolvedTheme]);
 
   return <div ref={containerRef} className="w-full flex justify-center" />;
 };
