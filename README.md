@@ -45,8 +45,8 @@ Follow these instructions to get a copy of the project up and running on your lo
     ```
 
 3.  **Set up environment variables:**
-    Create a `.env` file in the root of your project and add your Google AI API key:
-    ```
+    Create a `.env` file in the root of your project and add your Google AI API key. You can get a key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+    ```.env
     GEMINI_API_KEY=your_google_ai_api_key_here
     ```
 
@@ -66,3 +66,19 @@ To run the app in development mode, you need to run both the Next.js frontend an
     npm run genkit:dev
     ```
     This allows the Next.js app to communicate with your AI flows. The Genkit UI will be available at `http://localhost:4000`.
+
+## Deployment
+
+When you deploy your application, the AI features will not work until you configure your `GEMINI_API_KEY` as an environment variable on your hosting provider.
+
+The `.env` file is only for local development and should **not** be committed to your repository.
+
+### Setting Environment Variables on a Hosting Provider
+
+Here's how to set environment variables on common platforms:
+
+-   **Firebase App Hosting:** Go to your Firebase project, navigate to the App Hosting section, select your backend, and add `GEMINI_API_KEY` under the "Backend configuration" settings.
+-   **Vercel:** Go to your project's settings, navigate to the "Environment Variables" section, and add `GEMINI_API_KEY`.
+-   **Netlify:** Go to your site's settings, find the "Build & deploy" section, and add `GEMINI_API_KEY` under "Environment variables".
+
+After setting the key, you may need to redeploy your application for the change to take effect.
