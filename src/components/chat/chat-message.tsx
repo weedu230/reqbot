@@ -35,11 +35,6 @@ export default function ChatMessage({ message, onPlayAudio }: ChatMessageProps) 
         )}
       >
         <div className="flex items-center gap-2">
-          {isUser && message.audio && onPlayAudio && (
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onPlayAudio(message.audio!)}>
-              <Volume2 className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          )}
           <div
             className={cn(
               'max-w-xs md:max-w-md lg:max-w-lg rounded-lg px-4 py-2 text-sm shadow-sm animate-fade-in-up',
@@ -50,11 +45,6 @@ export default function ChatMessage({ message, onPlayAudio }: ChatMessageProps) 
           >
             <p className="whitespace-pre-wrap">{message.text}</p>
           </div>
-          {!isUser && message.audio && onPlayAudio && (
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onPlayAudio(message.audio!)}>
-              <Volume2 className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          )}
         </div>
 
         <span className="text-xs text-muted-foreground">

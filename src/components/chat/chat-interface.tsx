@@ -107,19 +107,6 @@ export default function ChatInterface() {
         timestamp: new Date(),
       };
 
-      const speechResult = await getAiSpeechResponse(chatResult.response);
-      if (speechResult.audio) {
-        aiResponse.audio = speechResult.audio;
-        playAudio(speechResult.audio);
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Speech Generation Error',
-          description:
-            speechResult.error || 'Could not generate audio response.',
-        });
-      }
-
       setMessages((prev) => [...prev, aiResponse]);
     });
   };
