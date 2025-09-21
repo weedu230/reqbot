@@ -5,7 +5,6 @@ ReqBot is a Next.js web application that acts as an AI-powered business analyst.
 ## Features
 
 -   **Conversational Requirement Gathering:** Engage in a natural conversation with ReqBot to describe your project needs.
--   **Voice-to-Text & Text-to-Speech:** Interact with the bot using your voice and hear its responses spoken back to you.
 -   **AI-Powered Requirement Extraction:** At any point, the AI can analyze the conversation and automatically extract structured requirements, categorizing them as Functional, Non-Functional, and Domain-specific.
 -   **Automated Report Generation:** With a single click, generate a comprehensive and printable project report that includes:
     -   **Executive Summary:** A high-level overview of the project's goals.
@@ -69,20 +68,33 @@ To run the app in development mode, you need to run both the Next.js frontend an
     ```
     This allows the Next.js app to communicate with your AI flows and provides the Genkit Inspector UI at `http://localhost:4000`.
 
-## Deployment
+## Deployment with Vercel
 
-When you deploy your application, the AI features will not work until you configure your `GEMINI_API_KEY` as an environment variable on your hosting provider.
+Follow these steps to deploy your application to Vercel directly from your GitHub repository.
 
-The `.env` file is only for local development and will **not** be used by your deployed application.
+### Step 1: Sign up and Connect to GitHub
+1.  Go to [vercel.com](https://vercel.com) and sign up for a free account.
+2.  During the sign-up process or from your dashboard, connect your GitHub account to Vercel.
 
-### Setting Environment Variables on a Hosting Provider
+### Step 2: Import Your Project
+1.  From your Vercel dashboard, click the **"Add New..."** button and select **"Project"**.
+2.  The "Import Git Repository" screen will appear. Find your `reqbot` repository in the list and click the **"Import"** button next to it.
 
-You must set the `GEMINI_API_KEY` in the environment variable settings of your hosting platform. Do **not** commit your `.env` file or API key to your Git repository.
+### Step 3: Configure Your Project
+Vercel is smart and will automatically detect that you are deploying a Next.js application. The default settings for the "Framework Preset" and "Build and Output Settings" should be correct. You do not need to change them.
 
-Here's how to set environment variables on common platforms:
+### Step 4: Add the Environment Variable (Crucial Step)
+This is the most important step to ensure the AI features work on your deployed site.
+1.  Expand the **"Environment Variables"** section.
+2.  Add a new variable:
+    -   **Name:** `GEMINI_API_KEY`
+    -   **Value:** Paste your Google AI API key here (the same one from your `.env` file).
+3.  Ensure the variable is available for all environments (Production, Preview, and Development).
+4.  Click the **"Add"** button.
 
--   **Firebase App Hosting:** Go to your Firebase project, navigate to the App Hosting section, select your backend, and add `GEMINI_API_KEY` under the "Backend configuration" settings.
--   **Vercel:** Go to your project's settings, navigate to the "Environment Variables" section, and add `GEMINI_API_KEY`.
--   **Netlify:** Go to your site's settings, find the "Build & deploy" section, and add `GEMINI_API_KEY` under "Environment variables".
+### Step 5: Deploy
+1.  Click the **"Deploy"** button.
+2.  Vercel will now start building and deploying your application. You can watch the progress in the build logs.
+3.  Once the deployment is complete, Vercel will provide you with a URL to your live application.
 
-After setting the key, you may need to redeploy your application for the change to take effect.
+Your application is now live! Every time you push a new commit to your main branch on GitHub, Vercel will automatically redeploy the application with the latest changes.
