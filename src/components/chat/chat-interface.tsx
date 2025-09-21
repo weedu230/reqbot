@@ -80,7 +80,7 @@ export default function ChatInterface() {
 
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
-    setInput('');
+setInput('');
 
     startResponding(async () => {
       const chatResult = await getAiChatResponse(newMessages);
@@ -205,74 +205,77 @@ export default function ChatInterface() {
       </ScrollArea>
 
       <div className="p-4 border-t bg-background/80 backdrop-blur-sm">
-        <form onSubmit={handleSendMessage} className="flex items-start gap-2">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={
-              isRecording ? 'Listening...' : 'Describe a requirement...'
-            }
-            className="flex-1 resize-none"
-            rows={1}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                handleSendMessage(e);
+        <div className="grid gap-2">
+          <div className="flex items-start gap-2">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={
+                isRecording ? 'Listening...' : 'Describe a requirement...'
               }
-            }}
-            disabled={isProcessing}
-          />
-          {isRecording ? (
-            <Button
-              type="button"
-              size="icon"
-              variant="destructive"
-              onClick={stopRecording}
-            >
-              <StopCircle className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              size="icon"
-              onClick={startRecording}
+              className="flex-1 resize-none"
+              rows={1}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  handleSendMessage(e);
+                }
+              }}
               disabled={isProcessing}
-            >
-              <Mic className="h-4 w-4" />
-            </Button>
-          )}
+            />
+            {isRecording ? (
+              <Button
+                type="button"
+                size="icon"
+                variant="destructive"
+                onClick={stopRecording}
+              >
+                <StopCircle className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="icon"
+                onClick={startRecording}
+                disabled={isProcessing}
+              >
+                <Mic className="h-4 w-4" />
+              </Button>
+            )}
 
-          <Button
-            type="submit"
-            size="icon"
-            disabled={!input.trim() || isProcessing}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
-        <div className="flex justify-end gap-2 mt-2">
-          <Button
-            variant="outline"
-            onClick={handleExtract}
-            disabled={isProcessing || messages.length < 2}
-          >
-            {isExtracting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <FileJson className="mr-2 h-4 w-4" />
-            )}
-            Extract Requirements
-          </Button>
-          <Button
-            onClick={handleGenerateReport}
-            disabled={isProcessing || messages.length < 2}
-          >
-            {isGeneratingReport ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <FileText className="mr-2 h-4 w-4" />
-            )}
-            Generate Report
-          </Button>
+            <Button
+              type="submit"
+              size="icon"
+              onClick={handleSendMessage}
+              disabled={!input.trim() || isProcessing}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex flex-col sm:flex-row justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={handleExtract}
+              disabled={isProcessing || messages.length < 2}
+            >
+              {isExtracting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FileJson className="mr-2 h-4 w-4" />
+              )}
+              Extract Requirements
+            </Button>
+            <Button
+              onClick={handleGenerateReport}
+              disabled={isProcessing || messages.length < 2}
+            >
+              {isGeneratingReport ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FileText className="mr-2 h-4 w-4" />
+              )}
+              Generate Report
+            </Button>
+          </div>
         </div>
       </div>
     </div>
