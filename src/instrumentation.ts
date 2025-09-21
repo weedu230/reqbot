@@ -12,6 +12,6 @@ import '@/ai/flows/extract-requirements-and-generate-json';
 import '@/ai/flows/generate-chat-response';
 import '@/ai/flows/generate-executive-summary';
 import '@/ai/flows/generate-activity-diagram';
-import '@/ai-flows/generate-cost-estimation';
+import '@/ai/flows/generate-cost-estimation';
 import '@/ai/flows/generate-references';
 import '@/ai/flows/generate-speech';
