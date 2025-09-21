@@ -44,11 +44,13 @@ Follow these instructions to get a copy of the project up and running on your lo
     npm install
     ```
 
-3.  **Set up environment variables:**
+3.  **Set up environment variables for local development:**
     Create a `.env` file in the root of your project and add your Google AI API key. You can get a key from [Google AI Studio](https://aistudio.google.com/app/apikey).
     ```.env
-    GEMINI_API_KEY=your_google_ai_api_key_here
+    # This file is for local development only and should not be committed to Git.
+    GEMINI_API_KEY="your_google_ai_api_key_here"
     ```
+    **Important:** Add `.env` to your `.gitignore` file to prevent committing your API key.
 
 ### Running the Development Server
 
@@ -60,20 +62,22 @@ To run the app in development mode, you need to run both the Next.js frontend an
     ```
     This will start the web application, typically on `http://localhost:9002`.
 
-2.  **Start the Genkit flows:**
-    In a separate terminal, run the following command to start the Genkit development server:
+2.  **Start the Genkit flows (for debugging):**
+    To inspect your AI flows, run the following command in a separate terminal:
     ```sh
     npm run genkit:dev
     ```
-    This allows the Next.js app to communicate with your AI flows. The Genkit UI will be available at `http://localhost:4000`.
+    This allows the Next.js app to communicate with your AI flows and provides the Genkit Inspector UI at `http://localhost:4000`.
 
 ## Deployment
 
 When you deploy your application, the AI features will not work until you configure your `GEMINI_API_KEY` as an environment variable on your hosting provider.
 
-The `.env` file is only for local development and should **not** be committed to your repository.
+The `.env` file is only for local development and will **not** be used by your deployed application.
 
 ### Setting Environment Variables on a Hosting Provider
+
+You must set the `GEMINI_API_KEY` in the environment variable settings of your hosting platform. Do **not** commit your `.env` file or API key to your Git repository.
 
 Here's how to set environment variables on common platforms:
 
