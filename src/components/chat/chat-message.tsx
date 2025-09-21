@@ -1,9 +1,10 @@
-import { Bot, User, Volume2 } from 'lucide-react';
+'use client';
+import { Bot, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/types';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '../ui/button';
 
 interface ChatMessageProps {

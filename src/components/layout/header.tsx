@@ -1,3 +1,4 @@
+'use client';
 import { ThemeToggle } from '@/components/common/theme-toggle';
 import { Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';

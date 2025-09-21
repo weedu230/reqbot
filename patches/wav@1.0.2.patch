@@ -1,0 +1,42 @@
+diff --git a/node_modules/wav/index.js b/node_modules/wav/index.js
+index 4511528..2e8d35e 100644
+--- a/node_modules/wav/index.js
++++ b/node_modules/wav/index.js
+@@ -10,13 +10,3 @@
+ util.inherits(Writer, Writable);
+ 
+ exports.Writer = Writer;
+-
+-// backwards-compat
+-exports.File = require('./lib/file');
+-exports.Header = require('./lib/header');
+-exports.Reader = require('./lib/reader');
+-
+-exports.createReader = function(file) {
+-  return new exports.Reader(file);
+-};
+-exports.createWriter = Writer;
+diff --git a/node_modules/wav/lib/writer.js b/node_modules/wav/lib/writer.js
+index 9262b92..6bb16ed 100644
+--- a/node_modules/wav/lib/writer.js
++++ b/node_modules/wav/lib/writer.js
+@@ -1,7 +1,6 @@
+ 
+ var debug = require('debug')('wav:writer');
+ var util = require('util');
+-var fs = require('fs');
+ var stream = require('stream');
+ var Writable = stream.Writable;
+ 
+@@ -15,11 +14,7 @@
+  */
+ 
+ function Writer (opts) {
+-  if (!(this instanceof Writer)) {
+-    return new Writer(opts);
+-  }
+   Writable.call(this, opts);
+-  this.opts = opts;
+ 
+   // wave header format
+   this.endianness = opts.endianness || 'LE';
