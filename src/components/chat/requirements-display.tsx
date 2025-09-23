@@ -27,7 +27,7 @@ const RequirementTable = ({
   requirements: Requirement[];
   title: string;
 }) => (
-  <AccordionItem value={title.toLowerCase()}>
+  <AccordionItem value={title.toLowerCase().replace(' ', '-')}>
     <AccordionTrigger>
       {title} ({requirements.length})
     </AccordionTrigger>
@@ -80,14 +80,16 @@ export default function RequirementsDisplay({
     (r) => r.type === 'NonFunctional'
   );
   const domain = requirements.filter((r) => r.type === 'Domain');
+  const inverse = requirements.filter((r) => r.type === 'Inverse');
 
   return (
     <div className="my-4 p-4 border rounded-lg bg-background animate-fade-in">
       <h3 className="text-lg font-semibold mb-2">Extracted Requirements</h3>
-      <Accordion type="multiple" defaultValue={['functional', 'nonfunctional', 'domain']}>
+      <Accordion type="multiple" defaultValue={['functional', 'non-functional', 'domain', 'inverse']}>
         <RequirementTable requirements={functional} title="Functional" />
         <RequirementTable requirements={nonFunctional} title="Non-Functional" />
         <RequirementTable requirements={domain} title="Domain" />
+        <RequirementTable requirements={inverse} title="Inverse" />
       </Accordion>
     </div>
   );

@@ -20,7 +20,7 @@ export type ExtractRequirementsAndGenerateJsonInput = z.infer<typeof ExtractRequ
 
 const RequirementSchema = z.object({
   id: z.string().describe("A unique identifier for the requirement."),
-  type: z.enum(["Functional", "NonFunctional", "Domain"]).describe("The type of requirement."),
+  type: z.enum(["Functional", "NonFunctional", "Domain", "Inverse"]).describe("The type of requirement."),
   description: z.string().describe("A detailed description of the requirement."),
   priority: z.enum(["Low", "Med", "High"]).describe("The priority of the requirement."),
   confidence_score: z.number().min(0).max(1).describe("A score (0-1) indicating the confidence in the accuracy of the requirement."),
@@ -48,7 +48,7 @@ const prompt = ai.definePrompt({
 Based on this conversation, extract the requirements and output them as a JSON object with a 'requirements' array. Each requirement should have the following fields:
 
 - id: A unique identifier for the requirement.
-- type: The type of requirement (Functional, NonFunctional, or Domain).
+- type: The type of requirement (Functional, NonFunctional, Domain, or Inverse). Inverse requirements specify what the system should NOT do.
 - description: A detailed description of the requirement.
 - priority: The priority of the requirement (Low, Med, or High).
 - confidence_score: A score (0-1) indicating your confidence in the accuracy of the requirement.

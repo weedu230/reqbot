@@ -209,6 +209,7 @@ export default function ReportPage() {
   const functional = requirements.filter((r) => r.type === 'Functional');
   const nonFunctional = requirements.filter((r) => r.type === 'NonFunctional');
   const domain = requirements.filter((r) => r.type === 'Domain');
+  const inverse = requirements.filter((r) => r.type === 'Inverse');
 
   return (
     <div className="bg-background min-h-screen">
@@ -245,6 +246,7 @@ export default function ReportPage() {
             <RequirementSection title="Functional Requirements" requirements={functional} />
             <RequirementSection title="Non-Functional Requirements" requirements={nonFunctional} />
             <RequirementSection title="Domain Requirements" requirements={domain} />
+            <RequirementSection title="Inverse Requirements" requirements={inverse} />
           </div>
 
           <div className="space-y-6">

@@ -8,7 +8,7 @@ export type Message = {
 
 export type Requirement = {
   id: string;
-  type: 'Functional' | 'NonFunctional' | 'Domain';
+  type: 'Functional' | 'NonFunctional' | 'Domain' | 'Inverse';
   description: string;
   priority: 'Low' | 'Med' | 'High';
   confidence_score: number;
