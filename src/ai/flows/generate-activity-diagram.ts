@@ -17,8 +17,25 @@ const GenerateActivityDiagramInputSchema = z.object({
 });
 export type GenerateActivityDiagramInput = z.infer<typeof GenerateActivityDiagramInputSchema>;
 
+const NodeSchema = z.object({
+  id: z.string().describe("A short, unique, single-word identifier for the node (e.g., 'A', 'B', 'C1')."),
+  label: z.string().describe("The user-visible text for the node. Keep it concise."),
+  type: z.enum(['action', 'decision', 'start', 'end']).describe("The shape of the node. Use 'action' for rectangular boxes, 'decision' for diamond shapes, 'start' for the beginning, and 'end' for the termination."),
+});
+
+const EdgeSchema = z.object({
+  from: z.string().describe("The ID of the starting node."),
+  to: z.string().describe("The ID of the ending node."),
+  label: z.string().optional().describe("An optional label for the edge, typically used for 'Yes' or 'No' paths from a decision node."),
+});
+
+const DiagramStructureSchema = z.object({
+  nodes: z.array(NodeSchema).describe("An array of all the nodes in the diagram."),
+  edges: z.array(EdgeSchema).describe("An array of the connections between the nodes."),
+});
+
 const GenerateActivityDiagramOutputSchema = z.object({
-  diagram: z.string().describe("The activity diagram in Mermaid syntax, excluding the 'flowchart TD' declaration."),
+  diagram: z.string().describe("The complete, final activity diagram in valid Mermaid.js 'flowchart TD' syntax."),
 });
 export type GenerateActivityDiagramOutput = z.infer<typeof GenerateActivityDiagramOutputSchema>;
 
@@ -32,29 +49,27 @@ export async function generateActivityDiagram(
 const prompt = ai.definePrompt({
   name: 'generateActivityDiagramPrompt',
   input: { schema: GenerateActivityDiagramInputSchema },
-  output: { schema: GenerateActivityDiagramOutputSchema },
-  prompt: `You are an expert system designer. Based on the following requirements, generate the body of an Activity Diagram in Mermaid.js 'flowchart TD' syntax.
+  output: { schema: DiagramStructureSchema },
+  prompt: `You are an expert system designer. Your task is to convert a list of project requirements into a structured activity diagram format.
+
+Based on the following requirements, generate a JSON object containing an array of 'nodes' and an array of 'edges'.
 
 Requirements:
 {{#each requirements}}
 - {{this.description}} (Priority: {{this.priority}}, Type: {{this.type}})
 {{/each}}
 
-You MUST ONLY generate the sequence of nodes and edges.
-- Start with a 'start' node like this: A["Start"]
-- End with an 'end' node like this: Z["End"]
-- Use clear, concise labels for activities and decisions. Keep labels short and AVOID special characters like '/', '(', ')', or '"'.
-- Each node must have a unique ID (e.g., A, B, C).
+Instructions for the JSON structure:
+- Nodes:
+  - Every diagram MUST have exactly one 'start' node and at least one 'end' node.
+  - Each node needs a short, unique 'id' (e.g., 'A', 'B', 'C1').
+  - The 'label' should be a concise summary of the step.
+  - Node 'type' must be one of: 'action' (for processes), 'decision' (for questions), 'start', or 'end'.
+- Edges:
+  - Each edge connects two nodes using their 'id' fields in 'from' and 'to'.
+  - Decision nodes should have at least two outgoing edges, typically labeled 'Yes' and 'No'.
 
-Example of the required output format:
-A[Start] --> B(User authenticates);
-B --> C{Is authentication successful?};
-C -->|Yes| D[User views dashboard];
-C -->|No| E[Show error message];
-D --> F[End];
-E --> A;
-
-DO NOT include the 'flowchart TD' line or the code block fences (\`\`\`mermaid). Only provide the node and edge definitions.
+Provide only the JSON object as your output.
 `,
 });
 
@@ -66,14 +81,44 @@ const generateActivityDiagramFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await prompt(input);
-    if (!output) {
-      throw new Error('Failed to generate diagram');
+    if (!output?.nodes || !output?.edges) {
+      throw new Error('Failed to generate diagram structure');
     }
-    // Sanitize the output to prevent Mermaid syntax errors
-    const sanitizedDiagram = output.diagram
-      .replace(/[\(\)\"]/g, '') // Remove parentheses and double quotes
-      .replace(/\//g, ' or '); // Replace slashes
 
-    return { diagram: `flowchart TD\n${sanitizedDiagram}` };
+    const { nodes, edges } = output;
+
+    let mermaidSyntax = 'flowchart TD\n';
+
+    // Sanitize labels to prevent Mermaid syntax errors
+    const sanitize = (text: string) => text.replace(/["]|[\(\)]/g, '');
+
+    // Add node definitions
+    nodes.forEach(node => {
+        const label = sanitize(node.label);
+        switch (node.type) {
+            case 'start':
+            case 'end':
+                mermaidSyntax += `    ${node.id}[("${label}")]\n`;
+                break;
+            case 'action':
+                mermaidSyntax += `    ${node.id}["${label}"]\n`;
+                break;
+            case 'decision':
+                mermaidSyntax += `    ${node.id}{"${label}"}\n`;
+                break;
+        }
+    });
+
+    // Add edge definitions
+    edges.forEach(edge => {
+        if (edge.label) {
+            const label = sanitize(edge.label);
+            mermaidSyntax += `    ${edge.from} -->|${label}| ${edge.to}\n`;
+        } else {
+            mermaidSyntax += `    ${edge.from} --> ${edge.to}\n`;
+        }
+    });
+
+    return { diagram: mermaidSyntax };
   }
 );
