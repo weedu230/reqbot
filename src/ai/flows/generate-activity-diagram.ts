@@ -43,7 +43,7 @@ Requirements:
 You MUST ONLY generate the sequence of nodes and edges.
 - Start with a 'start' node like this: A["Start"]
 - End with an 'end' node like this: Z["End"]
-- Use clear, concise labels for activities and decisions. Keep labels short and avoid special characters like '/', '(', or ')'.
+- Use clear, concise labels for activities and decisions. Keep labels short and AVOID special characters like '/', '(', ')', or '"'.
 - Each node must have a unique ID (e.g., A, B, C).
 
 Example of the required output format:
@@ -69,9 +69,9 @@ const generateActivityDiagramFlow = ai.defineFlow(
     if (!output) {
       throw new Error('Failed to generate diagram');
     }
-    // Sanitize the output and wrap it in the required flowchart syntax
+    // Sanitize the output to prevent Mermaid syntax errors
     const sanitizedDiagram = output.diagram
-      .replace(/[\(\)]/g, '') // Remove parentheses
+      .replace(/[\(\)\"]/g, '') // Remove parentheses and double quotes
       .replace(/\//g, ' or '); // Replace slashes
 
     return { diagram: `flowchart TD\n${sanitizedDiagram}` };
