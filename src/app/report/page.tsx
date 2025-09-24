@@ -114,30 +114,27 @@ const GeneratedSectionContent = ({
 };
 
 
-type ReportData = {
-  summary: string;
-  diagram: string;
-  estimation: string;
-  references: string;
+type ReportSectionState = {
+  content: string;
+  isLoading: boolean;
+  error: string;
 };
 
-type ReportErrors = {
-  summary?: string;
-  diagram?: string;
-  estimation?: string;
-  references?: string;
+const initialSectionState: ReportSectionState = {
+  content: '',
+  isLoading: true,
+  error: '',
 };
-
 
 export default function ReportPage() {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
-  const [conversationHistory, setConversationHistory] = useState('');
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
 
-  const [reportData, setReportData] = useState<Partial<ReportData>>({});
-  const [reportErrors, setReportErrors] = useState<ReportErrors>({});
-  const [isGenerating, setIsGenerating] = useState(true);
+  const [summaryState, setSummaryState] = useState(initialSectionState);
+  const [diagramState, setDiagramState] = useState(initialSectionState);
+  const [estimationState, setEstimationState] = useState(initialSectionState);
+  const [referencesState, setReferencesState] = useState(initialSectionState);
 
   useEffect(() => {
     setIsClient(true);
@@ -154,40 +151,47 @@ export default function ReportPage() {
       }
       if (hist) {
         storedHistory = hist;
-        setConversationHistory(storedHistory);
       }
 
       if (!reqs) {
         router.push('/');
-      } else {
-        // Fetch all generated data in parallel
-        const fetchAllData = async () => {
-          setIsGenerating(true);
-          const [summaryResult, diagramResult, estimationResult, referencesResult] = await Promise.all([
-            getExecutiveSummary(storedRequirements),
-            getActivityDiagram(storedRequirements),
-            getCostEstimation(storedRequirements),
-            getReferences(storedHistory),
-          ]);
-
-          setReportData({
-            summary: summaryResult.content,
-            diagram: diagramResult.content,
-            estimation: estimationResult.content,
-            references: referencesResult.content,
-          });
-
-          setReportErrors({
-            summary: summaryResult.error,
-            diagram: diagramResult.error,
-            estimation: estimationResult.error,
-            references: referencesResult.error,
-          });
-
-          setIsGenerating(false);
-        };
-        fetchAllData();
+        return;
       }
+
+      // --- Fetch all data in parallel ---
+
+      getExecutiveSummary(storedRequirements).then(result => {
+        setSummaryState({
+          content: result.content || '',
+          error: result.error || '',
+          isLoading: false,
+        });
+      });
+
+      getActivityDiagram(storedRequirements).then(result => {
+        setDiagramState({
+          content: result.content || '',
+          error: result.error || '',
+          isLoading: false,
+        });
+      });
+      
+      getCostEstimation(storedRequirements).then(result => {
+        setEstimationState({
+          content: result.content || '',
+          error: result.error || '',
+          isLoading: false,
+        });
+      });
+
+      getReferences(storedHistory).then(result => {
+        setReferencesState({
+          content: result.content || '',
+          error: result.error || '',
+          isLoading: false,
+        });
+      });
+
     } catch (error) {
       console.error('Failed to load from local storage or generate report', error);
       router.push('/');
@@ -238,7 +242,7 @@ export default function ReportPage() {
            <Card>
             <CardHeader><CardTitle className="text-xl md:text-2xl">Executive Summary</CardTitle></CardHeader>
             <CardContent>
-              <GeneratedSectionContent content={reportData.summary || ''} isLoading={isGenerating} error={reportErrors.summary || ''} />
+              <GeneratedSectionContent {...summaryState} />
             </CardContent>
           </Card>
 
@@ -253,13 +257,13 @@ export default function ReportPage() {
              <Card>
               <CardHeader><CardTitle className="text-xl md:text-2xl">Activity Diagram</CardTitle></CardHeader>
               <CardContent>
-                <GeneratedSectionContent content={reportData.diagram || ''} isLoading={isGenerating} error={reportErrors.diagram || ''} isDiagram={true} />
+                <GeneratedSectionContent {...diagramState} isDiagram={true} />
               </CardContent>
             </Card>
              <Card>
               <CardHeader><CardTitle className="text-xl md:text-2xl">Cost Estimation</CardTitle></CardHeader>
               <CardContent>
-                <GeneratedSectionContent content={reportData.estimation || ''} isLoading={isGenerating} error={reportErrors.estimation || ''} />
+                <GeneratedSectionContent {...estimationState} />
               </CardContent>
             </Card>
           </div>
@@ -267,7 +271,7 @@ export default function ReportPage() {
           <Card>
             <CardHeader><CardTitle className="text-xl md:text-2xl">References</CardTitle></CardHeader>
             <CardContent>
-              <GeneratedSectionContent content={reportData.references || ''} isLoading={isGenerating} error={reportErrors.references || ''} />
+              <GeneratedSectionContent {...referencesState} />
             </CardContent>
           </Card>
 
