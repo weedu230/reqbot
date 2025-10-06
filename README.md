@@ -68,6 +68,28 @@ To run the app in development mode, you need to run both the Next.js frontend an
     ```
     This allows the Next.js app to communicate with your AI flows and provides the Genkit Inspector UI at `http://localhost:4000`.
 
+## Saving Your Changes to GitHub
+
+After we've made changes to the code, those changes exist on your local machine. To save them to your GitHub repository, you'll need to commit them.
+
+1.  **Stage your changes:**
+    This command adds all modified files to a staging area, preparing them for a commit.
+    ```sh
+    git add .
+    ```
+
+2.  **Commit your changes:**
+    This command saves your staged changes with a descriptive message.
+    ```sh
+    git commit -m "feat: Describe the feature or fix you added"
+    ```
+
+3.  **Push to GitHub:**
+    This command uploads your committed changes to your remote repository on GitHub.
+    ```sh
+    git push
+    ```
+
 ## Deployment with Vercel
 
 Follow these steps to deploy your application to Vercel directly from your GitHub repository.
