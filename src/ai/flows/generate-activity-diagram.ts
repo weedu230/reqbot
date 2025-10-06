@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -19,7 +20,7 @@ export type GenerateActivityDiagramInput = z.infer<typeof GenerateActivityDiagra
 
 const NodeSchema = z.object({
   id: z.string().describe("A short, unique, single-word identifier for the node (e.g., 'A', 'B', 'C1')."),
-  label: z.string().describe("The user-visible text for the node. Keep it concise."),
+  label: z.string().describe("The user-visible text for the node. Keep it concise. Do not use special characters like /, (, or )."),
   type: z.enum(['action', 'decision', 'start', 'end']).describe("The shape of the node. Use 'action' for rectangular boxes, 'decision' for diamond shapes, 'start' for the beginning, and 'end' for the termination."),
 });
 
@@ -63,7 +64,7 @@ Instructions for the JSON structure:
 - Nodes:
   - Every diagram MUST have exactly one 'start' node and at least one 'end' node.
   - Each node needs a short, unique 'id' (e.g., 'A', 'B', 'C1').
-  - The 'label' should be a concise summary of the step.
+  - The 'label' should be a concise summary of the step. The label must not contain special characters like '/', '(', or ')'.
   - Node 'type' must be one of: 'action' (for processes), 'decision' (for questions), 'start', or 'end'.
 - Edges:
   - Each edge connects two nodes using their 'id' fields in 'from' and 'to'.
@@ -90,7 +91,8 @@ const generateActivityDiagramFlow = ai.defineFlow(
     let mermaidSyntax = 'flowchart TD\n';
 
     // Sanitize labels to prevent Mermaid syntax errors
-    const sanitize = (text: string) => text.replace(/["]|[\(\)]/g, '');
+    const sanitize = (text: string) => text.replace(/["]/g, '').replace(/[/]/g, '-').replace(/[\(\)]/g, '');
+
 
     // Add node definitions
     nodes.forEach(node => {

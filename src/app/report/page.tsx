@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Requirement } from '@/lib/types';
@@ -16,7 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Printer, ArrowLeft, Loader2 } from 'lucide-react';
+import { Printer, ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
 import {
   getExecutiveSummary,
   getActivityDiagram,
@@ -81,12 +82,14 @@ const GeneratedSectionContent = ({
   content,
   isLoading,
   error,
-  isDiagram = false
+  isDiagram = false,
+  onRetry,
 }: {
   content: string;
   isLoading: boolean;
   error: string;
   isDiagram?: boolean;
+  onRetry?: () => void;
 }) => {
   if (isLoading) {
     return (
@@ -98,7 +101,17 @@ const GeneratedSectionContent = ({
   }
 
   if (error) {
-    return <p className="text-destructive text-sm">{error}</p>;
+    return (
+      <div className="space-y-2 text-sm">
+        <p className="text-destructive">{error}</p>
+        {onRetry && (
+          <Button variant="secondary" size="sm" onClick={onRetry}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Retry
+          </Button>
+        )}
+      </div>
+    );
   }
 
   if (isDiagram) {
@@ -128,6 +141,7 @@ const initialSectionState: ReportSectionState = {
 
 export default function ReportPage() {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const [conversationHistory, setConversationHistory] = useState('');
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
 
@@ -135,6 +149,51 @@ export default function ReportPage() {
   const [diagramState, setDiagramState] = useState(initialSectionState);
   const [estimationState, setEstimationState] = useState(initialSectionState);
   const [referencesState, setReferencesState] = useState(initialSectionState);
+
+  const fetchSummary = useCallback(async (reqs: Requirement[]) => {
+    setSummaryState({ content: '', error: '', isLoading: true });
+    getExecutiveSummary(reqs).then(result => {
+      setSummaryState({
+        content: result.content || '',
+        error: result.error || '',
+        isLoading: false,
+      });
+    });
+  }, []);
+
+  const fetchDiagram = useCallback(async (reqs: Requirement[]) => {
+    setDiagramState({ content: '', error: '', isLoading: true });
+    getActivityDiagram(reqs).then(result => {
+      setDiagramState({
+        content: result.content || '',
+        error: result.error || '',
+        isLoading: false,
+      });
+    });
+  }, []);
+
+  const fetchEstimation = useCallback(async (reqs: Requirement[]) => {
+    setEstimationState({ content: '', error: '', isLoading: true });
+    getCostEstimation(reqs).then(result => {
+      setEstimationState({
+        content: result.content || '',
+        error: result.error || '',
+        isLoading: false,
+      });
+    });
+  }, []);
+
+  const fetchReferences = useCallback(async (hist: string) => {
+    setReferencesState({ content: '', error: '', isLoading: true });
+    getReferences(hist).then(result => {
+      setReferencesState({
+        content: result.content || '',
+        error: result.error || '',
+        isLoading: false,
+      });
+    });
+  }, []);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -151,52 +210,24 @@ export default function ReportPage() {
       }
       if (hist) {
         storedHistory = hist;
+        setConversationHistory(hist);
       }
 
       if (!reqs) {
         router.push('/');
         return;
       }
-
-      // --- Fetch all data in parallel ---
-
-      getExecutiveSummary(storedRequirements).then(result => {
-        setSummaryState({
-          content: result.content || '',
-          error: result.error || '',
-          isLoading: false,
-        });
-      });
-
-      getActivityDiagram(storedRequirements).then(result => {
-        setDiagramState({
-          content: result.content || '',
-          error: result.error || '',
-          isLoading: false,
-        });
-      });
       
-      getCostEstimation(storedRequirements).then(result => {
-        setEstimationState({
-          content: result.content || '',
-          error: result.error || '',
-          isLoading: false,
-        });
-      });
-
-      getReferences(storedHistory).then(result => {
-        setReferencesState({
-          content: result.content || '',
-          error: result.error || '',
-          isLoading: false,
-        });
-      });
+      fetchSummary(storedRequirements);
+      fetchDiagram(storedRequirements);
+      fetchEstimation(storedRequirements);
+      fetchReferences(storedHistory);
 
     } catch (error) {
       console.error('Failed to load from local storage or generate report', error);
       router.push('/');
     }
-  }, [router]);
+  }, [router, fetchSummary, fetchDiagram, fetchEstimation, fetchReferences]);
 
 
   if (!isClient) {
@@ -242,7 +273,7 @@ export default function ReportPage() {
            <Card>
             <CardHeader><CardTitle className="text-xl md:text-2xl">Executive Summary</CardTitle></CardHeader>
             <CardContent>
-              <GeneratedSectionContent {...summaryState} />
+              <GeneratedSectionContent {...summaryState} onRetry={() => fetchSummary(requirements)} />
             </CardContent>
           </Card>
 
@@ -257,13 +288,13 @@ export default function ReportPage() {
              <Card>
               <CardHeader><CardTitle className="text-xl md:text-2xl">Activity Diagram</CardTitle></CardHeader>
               <CardContent>
-                <GeneratedSectionContent {...diagramState} isDiagram={true} />
+                <GeneratedSectionContent {...diagramState} isDiagram={true} onRetry={() => fetchDiagram(requirements)} />
               </CardContent>
             </Card>
              <Card>
               <CardHeader><CardTitle className="text-xl md:text-2xl">Cost Estimation</CardTitle></CardHeader>
               <CardContent>
-                <GeneratedSectionContent {...estimationState} />
+                <GeneratedSectionContent {...estimationState} onRetry={() => fetchEstimation(requirements)} />
               </CardContent>
             </Card>
           </div>
@@ -271,7 +302,7 @@ export default function ReportPage() {
           <Card>
             <CardHeader><CardTitle className="text-xl md:text-2xl">References</CardTitle></CardHeader>
             <CardContent>
-              <GeneratedSectionContent {...referencesState} />
+              <GeneratedSectionContent {...referencesState} onRetry={() => fetchReferences(conversationHistory)} />
             </CardContent>
           </Card>
 
