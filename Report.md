@@ -100,9 +100,10 @@ o	Conversation references
 ________________________________________
 8. Appendix: Key Code Files
 GITHUB: https://github.com/weedu230/reqbot
-8.1 Main Chat Interface (components/ChatInterface.tsx):
+-8.1 Main Chat Interface (components/ChatInterface.tsx):
 typescript
 "use client";
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -146,7 +147,7 @@ export default function ChatInterface() {
 
   // ... rest of component
 }
-8.2 Genkit AI Flow (lib/flows/chat.ts):
+-8.2 Genkit AI Flow (lib/flows/chat.ts):
 typescript
 import { generate } from "@genkit-ai/ai";
 import { geminiPro } from "@genkit-ai/googleai";
@@ -180,7 +181,7 @@ export const generateChatResponse = generate(
     return { response: result.text };
   }
 );
-8.3 Server Action (lib/actions/chat.ts):
+-8.3 Server Action (lib/actions/chat.ts):
 typescript
 "use server";
 import { generateChatResponse } from "@/lib/flows/chat";
@@ -198,7 +199,7 @@ export async function getAiChatResponse(messages: Message[]): Promise<string> {
     throw new Error("Failed to get AI response");
   }
 }
-8.4 Package Configuration (package.json):
+-8.4 Package Configuration (package.json):
 json
 {
   "name": "reqbot",
