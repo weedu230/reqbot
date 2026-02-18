@@ -20,7 +20,14 @@ ReqBot is a Next.js web application that acts as an AI-powered business analyst.
 -   **UI:** [React](https://react.dev/), [TypeScript](https://www.typescriptlang.org/), [ShadCN/UI](https://ui.shadcn.com/)
 -   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 -   **Speech Recognition:** Web Speech API
+---
+## Demo
 
+
+https://github.com/user-attachments/assets/b2a0cdb6-4833-4f1e-a940-74ad8ed55c73
+
+
+---
 ## Getting Started
 
 Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
