@@ -24,7 +24,10 @@ ReqBot is a Next.js web application that acts as an AI-powered business analyst.
 ## Demo
 
 
-https://github.com/user-attachments/assets/b2a0cdb6-4833-4f1e-a940-74ad8ed55c73
+
+https://github.com/user-attachments/assets/f7fbf6a2-5362-450d-8847-8ed41bdea540
+
+
 
 
 ---
